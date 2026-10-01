@@ -1,0 +1,414 @@
+{
+	"info": {
+		"_postman_id": "b1a2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+		"name": "BankApplication - Devsu Banco Pichincha API",
+		"description": "Coleccion completa de pruebas para los microservicios de Clientes, Cuentas, Transacciones y Reportes.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Clientes (Port 8001)",
+			"item": [
+				{
+					"name": "Crear Cliente - Jose Lema",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dni\": \"1712345678\",\n    \"name\": \"Jose Lema\",\n    \"password\": \"1234\",\n    \"gender\": \"Masculino\",\n    \"age\": 35,\n    \"address\": \"Otavalo sn y principal\",\n    \"phone\": \"098254785\",\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8001/api/clients",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients"]
+						}
+					}
+				},
+				{
+					"name": "Crear Cliente - Marianela Montalvo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dni\": \"1798765432\",\n    \"name\": \"Marianela Montalvo\",\n    \"password\": \"5678\",\n    \"gender\": \"Femenino\",\n    \"age\": 29,\n    \"address\": \"Amazonas y NNUU\",\n    \"phone\": \"097548965\",\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8001/api/clients",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients"]
+						}
+					}
+				},
+				{
+					"name": "Listar todos los Clientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8001/api/clients",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Cliente por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8001/api/clients/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Cliente Completo (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dni\": \"1712345678\",\n    \"name\": \"Jose Lema Actualizado\",\n    \"password\": \"newpassword123\",\n    \"gender\": \"Masculino\",\n    \"age\": 36,\n    \"address\": \"Otavalo sn y secundaria\",\n    \"phone\": \"098254785\",\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8001/api/clients/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Estado de Cliente (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isActive\": false\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8001/api/clients/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients", "1"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Cliente por ID (DELETE)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8001/api/clients/2",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8001",
+							"path": ["api", "clients", "2"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Cuentas (Port 8000)",
+			"item": [
+				{
+					"name": "Crear Cuenta Ahorros - 478758",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"number\": \"478758\",\n    \"type\": \"Ahorro\",\n    \"initialAmount\": 2000.0,\n    \"isActive\": true,\n    \"clientId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/accounts",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts"]
+						}
+					}
+				},
+				{
+					"name": "Crear Cuenta Corriente - 225487",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"number\": \"225487\",\n    \"type\": \"Corriente\",\n    \"initialAmount\": 100.0,\n    \"isActive\": true,\n    \"clientId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/accounts",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts"]
+						}
+					}
+				},
+				{
+					"name": "Listar todas las Cuentas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/accounts",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Cuenta por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/accounts/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Cuenta Completa (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"number\": \"478758\",\n    \"type\": \"Ahorros\",\n    \"initialAmount\": 2500.0,\n    \"isActive\": true,\n    \"clientId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/accounts/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Estado de Cuenta (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isActive\": false\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/accounts/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Cuenta por ID (DELETE)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/accounts/2",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "accounts", "2"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Transacciones y Reportes (Port 8000)",
+			"item": [
+				{
+					"name": "Registrar Deposito (+575.0)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountId\": 1,\n    \"type\": \"Deposito\",\n    \"amount\": 575.0\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/transactions",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions"]
+						}
+					}
+				},
+				{
+					"name": "Registrar Retiro Valido (-540.0)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountId\": 1,\n    \"type\": \"Retiro\",\n    \"amount\": -540.0\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/transactions",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions"]
+						}
+					}
+				},
+				{
+					"name": "Registrar Retiro Excedido (Saldo no disponible - Error 400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountId\": 1,\n    \"type\": \"Retiro\",\n    \"amount\": -50000.0\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/transactions",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions"]
+						}
+					}
+				},
+				{
+					"name": "Listar todas las Transacciones",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/transactions",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions"]
+						}
+					}
+				},
+				{
+					"name": "Obtener Transaccion por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/transactions/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions", "1"]
+						}
+					}
+				},
+				{
+					"name": "Generar Reporte Estado de Cuenta",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/transactions/clients/1/report?dateTransactionStart=2026-01-01&dateTransactionEnd=2026-12-31",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions", "clients", "1", "report"],
+							"query": [
+								{
+									"key": "dateTransactionStart",
+									"value": "2026-01-01"
+								},
+								{
+									"key": "dateTransactionEnd",
+									"value": "2026-12-31"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
