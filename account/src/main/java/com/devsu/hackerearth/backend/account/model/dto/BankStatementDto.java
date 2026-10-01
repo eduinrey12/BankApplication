@@ -4,9 +4,11 @@ import java.util.Date;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class BankStatementDto {
     
 	private Date date;
@@ -14,7 +16,7 @@ public class BankStatementDto {
 	private String accountNumber;
 	private String accountType;
 	private double initialAmount;
-    private boolean isActive;
+	private boolean isActive;
 	private String transactionType;
 	private double amount;
 	private double balance;
