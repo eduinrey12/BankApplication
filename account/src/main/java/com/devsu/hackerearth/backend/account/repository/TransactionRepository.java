@@ -16,11 +16,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
 	List<Transaction> findByAccountId(Long accountId);
 
-	List<Transaction> findByAccountIdAndDateBetween(Long accountId, Date dateStart, Date dateEnd);
+	List<Transaction> findByAccountIdAndDateBetweenOrderByIdAsc(Long accountId, Date dateStart, Date dateEnd);
 
 	Optional<Transaction> findTopByAccountIdOrderByIdDesc(Long accountId);
 
-	@Query("SELECT t FROM Transaction t WHERE t.accountId IN :accountIds AND t.date BETWEEN :dateStart AND :dateEnd ORDER BY t.date ASC, t.id ASC")
+	@Query("SELECT t FROM Transaction t WHERE t.accountId IN :accountIds AND t.date BETWEEN :dateStart AND :dateEnd ORDER BY t.id ASC")
 	List<Transaction> findByAccountIdInAndDateBetween(
 			@Param("accountIds") List<Long> accountIds,
 			@Param("dateStart") Date dateStart,

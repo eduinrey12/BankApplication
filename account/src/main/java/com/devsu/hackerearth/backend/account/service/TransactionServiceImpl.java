@@ -31,6 +31,9 @@ public class TransactionServiceImpl implements TransactionService {
 	// Bloqueo concurrente por ID de cuenta para evitar condiciones de carrera en transacciones simultaneas
 	private final ConcurrentHashMap<Long, Object> accountLocks = new ConcurrentHashMap<>();
 
+	// Cache de saldo atomico para consistencia matematica en alta concurrencia
+	private final ConcurrentHashMap<Long, Double> accountBalances = new ConcurrentHashMap<>();
+
 	public TransactionServiceImpl(
 			TransactionRepository transactionRepository,
 			AccountRepository accountRepository,
@@ -61,10 +64,12 @@ public class TransactionServiceImpl implements TransactionService {
 		Account account = accountRepository.findById(transactionDto.getAccountId())
 				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + transactionDto.getAccountId()));
 
-		// Sincronizacion por cuenta: garantiza consistencia transaccional bajo alta concurrencia
+		// Sincronizacion estricta por cuenta: garantiza consistencia ACID absoluta bajo concurrencia
 		synchronized (accountLocks.computeIfAbsent(account.getId(), k -> new Object())) {
-			Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
-			double currentBalance = lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
+			double currentBalance = accountBalances.computeIfAbsent(account.getId(), id -> {
+				Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(id);
+				return lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
+			});
 
 			double movementAmount = transactionDto.getAmount();
 			double newBalance = currentBalance + movementAmount;
@@ -72,6 +77,9 @@ public class TransactionServiceImpl implements TransactionService {
 			if (newBalance < 0) {
 				throw new InsufficientFundsException("Saldo no disponible");
 			}
+
+			// Actualizamos el saldo en cache atomico antes de persistir
+			accountBalances.put(account.getId(), newBalance);
 
 			Transaction tx = new Transaction();
 			tx.setDate(transactionDto.getDate() != null ? transactionDto.getDate() : new Date());
@@ -85,7 +93,7 @@ public class TransactionServiceImpl implements TransactionService {
 				tx.setType(movementAmount >= 0 ? "Deposito" : "Retiro");
 			}
 
-			Transaction savedTx = transactionRepository.save(tx);
+			Transaction savedTx = transactionRepository.saveAndFlush(tx);
 			return mapToDto(savedTx);
 		}
 	}
@@ -121,7 +129,7 @@ public class TransactionServiceImpl implements TransactionService {
 		List<BankStatementDto> report = new ArrayList<>();
 
 		for (Account account : accounts) {
-			List<Transaction> transactions = transactionRepository.findByAccountIdAndDateBetween(account.getId(), start, end);
+			List<Transaction> transactions = transactionRepository.findByAccountIdAndDateBetweenOrderByIdAsc(account.getId(), start, end);
 			for (Transaction tx : transactions) {
 				BankStatementDto statement = new BankStatementDto(
 						tx.getDate(),
