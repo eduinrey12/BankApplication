@@ -5,9 +5,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.devsu.hackerearth.backend.account.client.ClientServiceClient;
 import com.devsu.hackerearth.backend.account.exception.InsufficientFundsException;
@@ -25,6 +27,9 @@ public class TransactionServiceImpl implements TransactionService {
 	private final TransactionRepository transactionRepository;
 	private final AccountRepository accountRepository;
 	private final ClientServiceClient clientServiceClient;
+
+	// Bloqueo concurrente por ID de cuenta para evitar condiciones de carrera en transacciones simultaneas
+	private final ConcurrentHashMap<Long, Object> accountLocks = new ConcurrentHashMap<>();
 
 	public TransactionServiceImpl(
 			TransactionRepository transactionRepository,
@@ -51,34 +56,38 @@ public class TransactionServiceImpl implements TransactionService {
 	}
 
 	@Override
+	@Transactional
 	public TransactionDto create(TransactionDto transactionDto) {
 		Account account = accountRepository.findById(transactionDto.getAccountId())
 				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + transactionDto.getAccountId()));
 
-		Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
-		double currentBalance = lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
+		// Sincronizacion por cuenta: garantiza consistencia transaccional bajo alta concurrencia
+		synchronized (accountLocks.computeIfAbsent(account.getId(), k -> new Object())) {
+			Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
+			double currentBalance = lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
 
-		double movementAmount = transactionDto.getAmount();
-		double newBalance = currentBalance + movementAmount;
+			double movementAmount = transactionDto.getAmount();
+			double newBalance = currentBalance + movementAmount;
 
-		if (newBalance < 0) {
-			throw new InsufficientFundsException("Saldo no disponible");
+			if (newBalance < 0) {
+				throw new InsufficientFundsException("Saldo no disponible");
+			}
+
+			Transaction tx = new Transaction();
+			tx.setDate(transactionDto.getDate() != null ? transactionDto.getDate() : new Date());
+			tx.setAmount(movementAmount);
+			tx.setBalance(newBalance);
+			tx.setAccountId(account.getId());
+
+			if (transactionDto.getType() != null && !transactionDto.getType().trim().isEmpty()) {
+				tx.setType(transactionDto.getType());
+			} else {
+				tx.setType(movementAmount >= 0 ? "Deposito" : "Retiro");
+			}
+
+			Transaction savedTx = transactionRepository.save(tx);
+			return mapToDto(savedTx);
 		}
-
-		Transaction tx = new Transaction();
-		tx.setDate(transactionDto.getDate() != null ? transactionDto.getDate() : new Date());
-		tx.setAmount(movementAmount);
-		tx.setBalance(newBalance);
-		tx.setAccountId(account.getId());
-
-		if (transactionDto.getType() != null && !transactionDto.getType().trim().isEmpty()) {
-			tx.setType(transactionDto.getType());
-		} else {
-			tx.setType(movementAmount >= 0 ? "Deposito" : "Retiro");
-		}
-
-		Transaction savedTx = transactionRepository.save(tx);
-		return mapToDto(savedTx);
 	}
 
 	@Override
