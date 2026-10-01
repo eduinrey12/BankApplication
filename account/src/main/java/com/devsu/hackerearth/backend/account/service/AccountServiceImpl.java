@@ -1,9 +1,12 @@
 package com.devsu.hackerearth.backend.account.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.devsu.hackerearth.backend.account.exception.ResourceNotFoundException;
+import com.devsu.hackerearth.backend.account.model.Account;
 import com.devsu.hackerearth.backend.account.model.dto.AccountDto;
 import com.devsu.hackerearth.backend.account.model.dto.PartialAccountDto;
 import com.devsu.hackerearth.backend.account.repository.AccountRepository;
@@ -17,39 +20,79 @@ public class AccountServiceImpl implements AccountService {
 		this.accountRepository = accountRepository;
 	}
 
-    @Override
-    public List<AccountDto> getAll() {
-        // Get all accounts
-		return null;
-    }
+	@Override
+	public List<AccountDto> getAll() {
+		return accountRepository.findAll()
+				.stream()
+				.map(this::mapToDto)
+				.collect(Collectors.toList());
+	}
 
-    @Override
-    public AccountDto getById(Long id) {
-        // Get accounts by id
-		return null;
-    }
+	@Override
+	public AccountDto getById(Long id) {
+		Account account = accountRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + id));
+		return mapToDto(account);
+	}
 
-    @Override
-    public AccountDto create(AccountDto accountDto) {
-        // Create account
-		return null;
-    }
+	@Override
+	public AccountDto create(AccountDto accountDto) {
+		Account account = mapToEntity(accountDto);
+		Account savedAccount = accountRepository.save(account);
+		return mapToDto(savedAccount);
+	}
 
-    @Override
-    public AccountDto update(AccountDto accountDto) {
-        // Update account
-		return null;
-    }
+	@Override
+	public AccountDto update(AccountDto accountDto) {
+		Account existingAccount = accountRepository.findById(accountDto.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + accountDto.getId()));
 
-    @Override
-    public AccountDto partialUpdate(Long id, PartialAccountDto partialAccountDto) {
-        // Partial update account
-		return null;
-    }
+		existingAccount.setNumber(accountDto.getNumber());
+		existingAccount.setType(accountDto.getType());
+		existingAccount.setInitialAmount(accountDto.getInitialAmount());
+		existingAccount.setActive(accountDto.isActive());
+		existingAccount.setClientId(accountDto.getClientId());
 
-    @Override
-    public void deleteById(Long id) {
-        // Delete account
-    }
-    
+		Account updatedAccount = accountRepository.save(existingAccount);
+		return mapToDto(updatedAccount);
+	}
+
+	@Override
+	public AccountDto partialUpdate(Long id, PartialAccountDto partialAccountDto) {
+		Account existingAccount = accountRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + id));
+
+		existingAccount.setActive(partialAccountDto.isActive());
+		Account updatedAccount = accountRepository.save(existingAccount);
+		return mapToDto(updatedAccount);
+	}
+
+	@Override
+	public void deleteById(Long id) {
+		Account existingAccount = accountRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + id));
+		accountRepository.delete(existingAccount);
+	}
+
+	private AccountDto mapToDto(Account account) {
+		return new AccountDto(
+				account.getId(),
+				account.getNumber(),
+				account.getType(),
+				account.getInitialAmount(),
+				account.isActive(),
+				account.getClientId()
+		);
+	}
+
+	private Account mapToEntity(AccountDto accountDto) {
+		Account account = new Account();
+		account.setId(accountDto.getId());
+		account.setNumber(accountDto.getNumber());
+		account.setType(accountDto.getType());
+		account.setInitialAmount(accountDto.getInitialAmount());
+		account.setActive(accountDto.isActive());
+		account.setClientId(accountDto.getClientId());
+		return account;
+	}
 }
