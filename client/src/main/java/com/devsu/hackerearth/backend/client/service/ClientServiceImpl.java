@@ -1,9 +1,12 @@
 package com.devsu.hackerearth.backend.client.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.devsu.hackerearth.backend.client.exception.ResourceNotFoundException;
+import com.devsu.hackerearth.backend.client.model.Client;
 import com.devsu.hackerearth.backend.client.model.dto.ClientDto;
 import com.devsu.hackerearth.backend.client.model.dto.PartialClientDto;
 import com.devsu.hackerearth.backend.client.repository.ClientRepository;
@@ -19,36 +22,86 @@ public class ClientServiceImpl implements ClientService {
 
 	@Override
 	public List<ClientDto> getAll() {
-		// Get all clients
-		return null;
+		return clientRepository.findAll()
+				.stream()
+				.map(this::mapToDto)
+				.collect(Collectors.toList());
 	}
 
 	@Override
 	public ClientDto getById(Long id) {
-		// Get clients by id
-		return null;
+		Client client = clientRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+		return mapToDto(client);
 	}
 
 	@Override
 	public ClientDto create(ClientDto clientDto) {
-		// Create client
-		return null;
+		Client client = mapToEntity(clientDto);
+		Client savedClient = clientRepository.save(client);
+		return mapToDto(savedClient);
 	}
 
 	@Override
 	public ClientDto update(ClientDto clientDto) {
-		// Update client
-		return null;
+		Client existingClient = clientRepository.findById(clientDto.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + clientDto.getId()));
+
+		existingClient.setDni(clientDto.getDni());
+		existingClient.setName(clientDto.getName());
+		existingClient.setPassword(clientDto.getPassword());
+		existingClient.setGender(clientDto.getGender());
+		existingClient.setAge(clientDto.getAge());
+		existingClient.setAddress(clientDto.getAddress());
+		existingClient.setPhone(clientDto.getPhone());
+		existingClient.setActive(clientDto.isActive());
+
+		Client updatedClient = clientRepository.save(existingClient);
+		return mapToDto(updatedClient);
 	}
 
 	@Override
-    public ClientDto partialUpdate(Long id, PartialClientDto partialClientDto) {
-        // Partial update account
-		return null;
-    }
+	public ClientDto partialUpdate(Long id, PartialClientDto partialClientDto) {
+		Client existingClient = clientRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+
+		existingClient.setActive(partialClientDto.isActive());
+		Client updatedClient = clientRepository.save(existingClient);
+		return mapToDto(updatedClient);
+	}
 
 	@Override
 	public void deleteById(Long id) {
-		// Delete client
+		Client existingClient = clientRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
+		clientRepository.delete(existingClient);
+	}
+
+	private ClientDto mapToDto(Client client) {
+		return new ClientDto(
+				client.getId(),
+				client.getDni(),
+				client.getName(),
+				client.getPassword(),
+				client.getGender(),
+				client.getAge(),
+				client.getAddress(),
+				client.getPhone(),
+				client.isActive()
+		);
+	}
+
+	private Client mapToEntity(ClientDto clientDto) {
+		Client client = new Client();
+		client.setId(clientDto.getId());
+		client.setDni(clientDto.getDni());
+		client.setName(clientDto.getName());
+		client.setPassword(clientDto.getPassword());
+		client.setGender(clientDto.getGender());
+		client.setAge(clientDto.getAge());
+		client.setAddress(clientDto.getAddress());
+		client.setPhone(clientDto.getPhone());
+		client.setActive(clientDto.isActive());
+		return client;
 	}
 }
