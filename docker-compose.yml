@@ -9,6 +9,7 @@ services:
     ports:
       - "8001:8001"
     environment:
+      - PORT=8001
       - SERVER_PORT=8001
     networks:
       - bank-network
@@ -21,6 +22,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - PORT=8000
       - SERVER_PORT=8000
       - CLIENT_SERVICE_URL=http://client-service:8001/api/clients
     depends_on:

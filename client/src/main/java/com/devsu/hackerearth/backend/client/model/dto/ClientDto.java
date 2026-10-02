@@ -12,6 +12,7 @@ public class ClientDto {
 	private Long id;
 	private String dni;
 	private String name;
+	@com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
 	private String password;
 	private String gender;
 	private int age;
