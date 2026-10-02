@@ -71,8 +71,8 @@ public class TransactionServiceImpl implements TransactionService {
 				return lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
 			});
 
-			double movementAmount = transactionDto.getAmount();
-			double newBalance = currentBalance + movementAmount;
+			double movementAmount = Math.round(transactionDto.getAmount() * 100.0) / 100.0;
+			double newBalance = Math.round((currentBalance + movementAmount) * 100.0) / 100.0;
 
 			if (newBalance < 0) {
 				throw new InsufficientFundsException("Saldo no disponible");
