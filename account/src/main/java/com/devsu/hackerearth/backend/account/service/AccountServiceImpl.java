@@ -38,6 +38,7 @@ public class AccountServiceImpl implements AccountService {
 	@Override
 	public AccountDto create(AccountDto accountDto) {
 		Account account = mapToEntity(accountDto);
+		account.setId(null);
 		Account savedAccount = accountRepository.save(account);
 		return mapToDto(savedAccount);
 	}

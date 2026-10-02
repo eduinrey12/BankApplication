@@ -33,9 +33,6 @@ public class TransactionServiceImpl implements TransactionService {
 	private final AccountRepository accountRepository;
 	private final ClientServiceClient clientServiceClient;
 
-	// Bloqueo concurrente por ID de cuenta a nivel de JVM para defensa en profundidad
-	private final ConcurrentHashMap<Long, Object> accountLocks = new ConcurrentHashMap<>();
-
 	public TransactionServiceImpl(
 			TransactionRepository transactionRepository,
 			AccountRepository accountRepository,
@@ -68,37 +65,34 @@ public class TransactionServiceImpl implements TransactionService {
 				.or(() -> accountRepository.findById(transactionDto.getAccountId()))
 				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + transactionDto.getAccountId()));
 
-		// Defensa en profundidad: sincronizacion JVM combinada con bloqueo pesimista en DB
-		synchronized (accountLocks.computeIfAbsent(account.getId(), k -> new Object())) {
-			BigDecimal currentBalance = BigDecimal.valueOf(account.getInitialAmount());
-			Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
-			if (lastTx.isPresent()) {
-				currentBalance = BigDecimal.valueOf(lastTx.get().getBalance());
-			}
-
-			// Calculo monetario formal con BigDecimal y redondeo Half-Even (estandar bancario internacional)
-			BigDecimal movementAmount = BigDecimal.valueOf(transactionDto.getAmount()).setScale(2, RoundingMode.HALF_EVEN);
-			BigDecimal newBalance = currentBalance.add(movementAmount).setScale(2, RoundingMode.HALF_EVEN);
-
-			if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-				throw new InsufficientFundsException("Saldo no disponible");
-			}
-
-			Transaction tx = new Transaction();
-			tx.setDate(transactionDto.getDate() != null ? transactionDto.getDate() : new Date());
-			tx.setAmount(movementAmount.doubleValue());
-			tx.setBalance(newBalance.doubleValue());
-			tx.setAccountId(account.getId());
-
-			if (transactionDto.getType() != null && !transactionDto.getType().trim().isEmpty()) {
-				tx.setType(transactionDto.getType());
-			} else {
-				tx.setType(movementAmount.signum() >= 0 ? "Deposito" : "Retiro");
-			}
-
-			Transaction savedTx = transactionRepository.saveAndFlush(tx);
-			return mapToDto(savedTx);
+		BigDecimal currentBalance = BigDecimal.valueOf(account.getInitialAmount());
+		Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
+		if (lastTx.isPresent()) {
+			currentBalance = BigDecimal.valueOf(lastTx.get().getBalance());
 		}
+
+		// Calculo monetario formal con BigDecimal y redondeo Half-Even (estandar bancario internacional)
+		BigDecimal movementAmount = BigDecimal.valueOf(transactionDto.getAmount()).setScale(2, RoundingMode.HALF_EVEN);
+		BigDecimal newBalance = currentBalance.add(movementAmount).setScale(2, RoundingMode.HALF_EVEN);
+
+		if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+			throw new InsufficientFundsException("Saldo no disponible");
+		}
+
+		Transaction tx = new Transaction();
+		tx.setDate(transactionDto.getDate() != null ? transactionDto.getDate() : new Date());
+		tx.setAmount(movementAmount.doubleValue());
+		tx.setBalance(newBalance.doubleValue());
+		tx.setAccountId(account.getId());
+
+		if (transactionDto.getType() != null && !transactionDto.getType().trim().isEmpty()) {
+			tx.setType(transactionDto.getType());
+		} else {
+			tx.setType(movementAmount.signum() >= 0 ? "Deposito" : "Retiro");
+		}
+
+		Transaction savedTx = transactionRepository.saveAndFlush(tx);
+		return mapToDto(savedTx);
 	}
 
 	@Override
@@ -129,26 +123,46 @@ public class TransactionServiceImpl implements TransactionService {
 		}
 
 		List<Long> accountIds = accounts.stream().map(Account::getId).collect(Collectors.toList());
-		Map<Long, Account> accountMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
 
 		// Optimizacion Senior: eliminacion del problema N+1 mediante consulta agrupada en una sola transaccion
 		List<Transaction> transactions = transactionRepository.findByAccountIdInAndDateBetween(accountIds, start, end);
+		Map<Long, List<Transaction>> txsByAccount = transactions.stream()
+				.collect(Collectors.groupingBy(Transaction::getAccountId));
+
 		String clientName = clientServiceClient.getClientName(clientId);
 		List<BankStatementDto> report = new ArrayList<>();
 
-		for (Transaction tx : transactions) {
-			Account account = accountMap.get(tx.getAccountId());
-			if (account != null) {
+		for (Account account : accounts) {
+			List<Transaction> accountTxs = txsByAccount.get(account.getId());
+			if (accountTxs != null && !accountTxs.isEmpty()) {
+				for (Transaction tx : accountTxs) {
+					BankStatementDto statement = new BankStatementDto(
+							tx.getDate(),
+							clientName,
+							account.getNumber(),
+							account.getType(),
+							account.getInitialAmount(),
+							account.isActive(),
+							tx.getType(),
+							tx.getAmount(),
+							tx.getBalance()
+					);
+					report.add(statement);
+				}
+			} else {
+				// F4.1.1: Toda cuenta asociada figura con su saldo actual incluso si no tuvo movimientos en el periodo
+				Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
+				double currentBalance = lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
 				BankStatementDto statement = new BankStatementDto(
-						tx.getDate(),
+						start,
 						clientName,
 						account.getNumber(),
 						account.getType(),
 						account.getInitialAmount(),
 						account.isActive(),
-						tx.getType(),
-						tx.getAmount(),
-						tx.getBalance()
+						"Sin movimientos",
+						0.0,
+						currentBalance
 				);
 				report.add(statement);
 			}

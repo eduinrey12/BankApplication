@@ -38,6 +38,7 @@ public class ClientServiceImpl implements ClientService {
 	@Override
 	public ClientDto create(ClientDto clientDto) {
 		Client client = mapToEntity(clientDto);
+		client.setId(null);
 		Client savedClient = clientRepository.save(client);
 		return mapToDto(savedClient);
 	}

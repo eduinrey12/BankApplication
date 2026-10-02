@@ -30,4 +30,8 @@ public class ClientServiceClient {
 		}
 		return "Cliente " + clientId;
 	}
+
+	public java.util.concurrent.CompletableFuture<String> getClientNameAsync(Long clientId) {
+		return java.util.concurrent.CompletableFuture.supplyAsync(() -> getClientName(clientId));
+	}
 }

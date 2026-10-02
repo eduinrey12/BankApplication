@@ -99,9 +99,9 @@ En un entorno productivo de alta concurrencia:
 * **Aritmética Financiera**: Todos los cálculos de saldo y movimientos contables se procesan utilizando `BigDecimal` con escala a 2 decimales y modo de redondeo bancario `RoundingMode.HALF_EVEN` (estándar bancario internacional).
 * **Cero Desbordes Binarios**: Evita las inconsistencias y pérdidas de centavos características de los tipos flotantes binarios (`double`/`float`) bajo la norma IEEE-754.
 
-### 3. Optimización de Consultas y Eliminación del Problema N+1
-* **Consultas Agrupadas en Lote**: En la generación de estados de cuenta consolidados (F4), se implementó la consulta indexada `findByAccountIdInAndDateBetween`. 
-* **Rendimiento Escalable**: En lugar de ejecutar una consulta por cada cuenta del cliente (patrón N+1), se resuelven todos los movimientos de todas las cuentas asociadas en un único viaje de red (*single round-trip*) a la base de datos.
+### 3. Optimización de Consultas y Cumplimiento Normativo del Reporte (F4)
+* **Consultas Agrupadas en Lote (Eliminación de N+1)**: En la generación de estados de cuenta consolidados (F4), se implementó la consulta indexada `findByAccountIdInAndDateBetween` combinada con agrupamiento en memoria (`groupingBy(Transaction::getAccountId)`). En lugar de ejecutar una consulta por cada cuenta del cliente (patrón N+1), se resuelven todos los movimientos de todas las cuentas asociadas en un único viaje de red (*single round-trip*) a la base de datos.
+* **Cobertura Total de Cuentas (F4.1.1)**: Siguiendo estrictamente la cláusula *"Cuentas asociadas con sus respectivos saldos"*, el reporte incluye toda cuenta bancaria del cliente, reportando su saldo actual con movimiento en 0.0 incluso si no registró transacciones dentro del rango de fechas consultado.
 
 ### 4. Seguridad Bancaria y Buenas Prácticas (OWASP / PCI-DSS)
 * **Mitigación de IDOR / Mass Assignment**: En las operaciones de creación (`POST`), el servicio garantiza la generación de claves primarias por el motor de base de datos forzando `id = null`, previniendo que un usuario malicioso sobrescriba registros preexistentes.
@@ -112,6 +112,7 @@ En un entorno productivo de alta concurrencia:
   - Capa perimetral de seguridad con **Spring Security**, autenticación vía **OAuth2 / JWT** y autorización por roles (**RBAC**).
 
 ### 5. Comunicación Asincrónica y Patrón Transactional Outbox
+* **Invocación Asincrónica No Bloqueante**: `ClientServiceClient` expone métodos asíncronos (`getClientNameAsync`) mediante `CompletableFuture`, permitiendo la resolución no bloqueante de datos entre microservicios.
 * **Desacoplamiento Orientado a Eventos (EDA)**: Los eventos de dominio (`AccountDebitedEvent`, `AccountCreditedEvent`, `ClientRegisteredEvent`) se publican de forma asíncrona mediante un broker de mensajería (**Apache Kafka** o **RabbitMQ**).
 * **Transactional Outbox**: Asegura consistencia eventual confiable escribiendo los eventos en una tabla `outbox` dentro de la misma transacción de base de datos antes de transmitirlos al bus de eventos, previniendo fallos de escritura dual (*dual-write problem*).
 
