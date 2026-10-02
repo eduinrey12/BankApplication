@@ -3,7 +3,12 @@ package com.devsu.hackerearth.backend.account.repository;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.devsu.hackerearth.backend.account.model.Account;
@@ -14,4 +19,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 	Optional<Account> findByNumber(String number);
 
 	List<Account> findByClientId(Long clientId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("SELECT a FROM Account a WHERE a.id = :id")
+	Optional<Account> findByIdWithLock(@Param("id") Long id);
 }

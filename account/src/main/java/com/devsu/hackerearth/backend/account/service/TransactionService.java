@@ -15,4 +15,7 @@ public interface TransactionService {
 	public TransactionDto create(TransactionDto transactionDto);
     public List<BankStatementDto> getAllByAccountClientIdAndDateBetween(Long clientId, @Param("dateTransactionStart") Date dateTransactionStart, @Param("dateTransactionEnd") Date dateTransactionEnd);
     public TransactionDto getLastByAccountId(Long accountId);
+    default TransactionDto update(TransactionDto transactionDto) { return null; }
+    default TransactionDto partialUpdate(Long id, TransactionDto transactionDto) { return null; }
+    default void deleteById(Long id) {}
 }

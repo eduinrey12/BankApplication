@@ -1,14 +1,19 @@
 package com.devsu.hackerearth.backend.account.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.devsu.hackerearth.backend.account.client.ClientServiceClient;
@@ -28,11 +33,8 @@ public class TransactionServiceImpl implements TransactionService {
 	private final AccountRepository accountRepository;
 	private final ClientServiceClient clientServiceClient;
 
-	// Bloqueo concurrente por ID de cuenta para evitar condiciones de carrera en transacciones simultaneas
+	// Bloqueo concurrente por ID de cuenta a nivel de JVM para defensa en profundidad
 	private final ConcurrentHashMap<Long, Object> accountLocks = new ConcurrentHashMap<>();
-
-	// Cache de saldo atomico para consistencia matematica en alta concurrencia
-	private final ConcurrentHashMap<Long, Double> accountBalances = new ConcurrentHashMap<>();
 
 	public TransactionServiceImpl(
 			TransactionRepository transactionRepository,
@@ -59,38 +61,39 @@ public class TransactionServiceImpl implements TransactionService {
 	}
 
 	@Override
-	@Transactional
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	public TransactionDto create(TransactionDto transactionDto) {
-		Account account = accountRepository.findById(transactionDto.getAccountId())
+		// Bloqueo pesimista a nivel de base de datos (SELECT ... FOR UPDATE) para cluster / pods distribuidos
+		Account account = accountRepository.findByIdWithLock(transactionDto.getAccountId())
+				.or(() -> accountRepository.findById(transactionDto.getAccountId()))
 				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + transactionDto.getAccountId()));
 
-		// Sincronizacion estricta por cuenta: garantiza consistencia ACID absoluta bajo concurrencia
+		// Defensa en profundidad: sincronizacion JVM combinada con bloqueo pesimista en DB
 		synchronized (accountLocks.computeIfAbsent(account.getId(), k -> new Object())) {
-			double currentBalance = accountBalances.computeIfAbsent(account.getId(), id -> {
-				Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(id);
-				return lastTx.map(Transaction::getBalance).orElse(account.getInitialAmount());
-			});
+			BigDecimal currentBalance = BigDecimal.valueOf(account.getInitialAmount());
+			Optional<Transaction> lastTx = transactionRepository.findTopByAccountIdOrderByIdDesc(account.getId());
+			if (lastTx.isPresent()) {
+				currentBalance = BigDecimal.valueOf(lastTx.get().getBalance());
+			}
 
-			double movementAmount = Math.round(transactionDto.getAmount() * 100.0) / 100.0;
-			double newBalance = Math.round((currentBalance + movementAmount) * 100.0) / 100.0;
+			// Calculo monetario formal con BigDecimal y redondeo Half-Even (estandar bancario internacional)
+			BigDecimal movementAmount = BigDecimal.valueOf(transactionDto.getAmount()).setScale(2, RoundingMode.HALF_EVEN);
+			BigDecimal newBalance = currentBalance.add(movementAmount).setScale(2, RoundingMode.HALF_EVEN);
 
-			if (newBalance < 0) {
+			if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
 				throw new InsufficientFundsException("Saldo no disponible");
 			}
 
-			// Actualizamos el saldo en cache atomico antes de persistir
-			accountBalances.put(account.getId(), newBalance);
-
 			Transaction tx = new Transaction();
 			tx.setDate(transactionDto.getDate() != null ? transactionDto.getDate() : new Date());
-			tx.setAmount(movementAmount);
-			tx.setBalance(newBalance);
+			tx.setAmount(movementAmount.doubleValue());
+			tx.setBalance(newBalance.doubleValue());
 			tx.setAccountId(account.getId());
 
 			if (transactionDto.getType() != null && !transactionDto.getType().trim().isEmpty()) {
 				tx.setType(transactionDto.getType());
 			} else {
-				tx.setType(movementAmount >= 0 ? "Deposito" : "Retiro");
+				tx.setType(movementAmount.signum() >= 0 ? "Deposito" : "Retiro");
 			}
 
 			Transaction savedTx = transactionRepository.saveAndFlush(tx);
@@ -125,12 +128,17 @@ public class TransactionServiceImpl implements TransactionService {
 			return new ArrayList<>();
 		}
 
+		List<Long> accountIds = accounts.stream().map(Account::getId).collect(Collectors.toList());
+		Map<Long, Account> accountMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
+
+		// Optimizacion Senior: eliminacion del problema N+1 mediante consulta agrupada en una sola transaccion
+		List<Transaction> transactions = transactionRepository.findByAccountIdInAndDateBetween(accountIds, start, end);
 		String clientName = clientServiceClient.getClientName(clientId);
 		List<BankStatementDto> report = new ArrayList<>();
 
-		for (Account account : accounts) {
-			List<Transaction> transactions = transactionRepository.findByAccountIdAndDateBetweenOrderByIdAsc(account.getId(), start, end);
-			for (Transaction tx : transactions) {
+		for (Transaction tx : transactions) {
+			Account account = accountMap.get(tx.getAccountId());
+			if (account != null) {
 				BankStatementDto statement = new BankStatementDto(
 						tx.getDate(),
 						clientName,
@@ -154,6 +162,31 @@ public class TransactionServiceImpl implements TransactionService {
 		return transactionRepository.findTopByAccountIdOrderByIdDesc(accountId)
 				.map(this::mapToDto)
 				.orElse(null);
+	}
+
+	@Override
+	public TransactionDto update(TransactionDto transactionDto) {
+		Transaction tx = transactionRepository.findById(transactionDto.getId())
+				.orElseThrow(() -> new ResourceNotFoundException("Transaccion no encontrada con id: " + transactionDto.getId()));
+		if (transactionDto.getType() != null) tx.setType(transactionDto.getType());
+		if (transactionDto.getDate() != null) tx.setDate(transactionDto.getDate());
+		return mapToDto(transactionRepository.save(tx));
+	}
+
+	@Override
+	public TransactionDto partialUpdate(Long id, TransactionDto transactionDto) {
+		Transaction tx = transactionRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Transaccion no encontrada con id: " + id));
+		if (transactionDto.getType() != null) tx.setType(transactionDto.getType());
+		if (transactionDto.getDate() != null) tx.setDate(transactionDto.getDate());
+		return mapToDto(transactionRepository.save(tx));
+	}
+
+	@Override
+	public void deleteById(Long id) {
+		Transaction tx = transactionRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Transaccion no encontrada con id: " + id));
+		transactionRepository.delete(tx);
 	}
 
 	private TransactionDto mapToDto(Transaction tx) {

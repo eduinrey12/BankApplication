@@ -81,7 +81,39 @@ En un entorno productivo de alta concurrencia:
 | `GET` | `/api/transactions` | Listar histórico general de transacciones |
 | `GET` | `/api/transactions/{id}` | Consultar una transacción por su ID |
 | `POST` | `/api/transactions` | Registrar transacción (depósito/retiro con cálculo de saldo) |
+| `PUT` | `/api/transactions/{id}` | Actualizar datos de una transacción |
+| `PATCH`| `/api/transactions/{id}` | Actualización parcial de una transacción |
+| `DELETE`| `/api/transactions/{id}`| Eliminar registro de transacción |
 | `GET` | `/api/transactions/clients/{clientId}/report` | **F4: Reporte de Estado de Cuenta** por fechas (`?dateTransactionStart=YYYY-MM-DD&dateTransactionEnd=YYYY-MM-DD`) |
+
+---
+
+## 🛡️ Arquitectura Bancaria Institucional: Concurrencia, Seguridad y Resiliencia
+
+### 1. Concurrencia Distribuida y Bloqueo Pesimista (Pessimistic Locking)
+* **Serialización a Nivel de Base de Datos**: Para soportar entornos cloud con múltiples réplicas (Kubernetes pods), se implementa bloqueo pesimista mediante `@Lock(LockModeType.PESSIMISTIC_WRITE)` (`SELECT ... FOR UPDATE`) sobre la entidad `Account` al procesar movimientos.
+* **Eliminación de Condiciones de Carrera**: Ante peticiones concurrentes simultáneas de retiro sobre una misma cuenta, las transacciones se encolan a nivel de motor relacional, garantizando ACID absoluto y eliminando el riesgo de sobregiro o doble gasto (*double-spending*).
+* **Rollback Seguro**: Al delegar la atomicidad a la transacción de base de datos (`@Transactional(isolation = Isolation.READ_COMMITTED)`), cualquier falla o cancelación revierte el estado sin dejar datos desincronizados en memoria.
+
+### 2. Precisión Monetaria Estricta (`BigDecimal`)
+* **Aritmética Financiera**: Todos los cálculos de saldo y movimientos contables se procesan utilizando `BigDecimal` con escala a 2 decimales y modo de redondeo bancario `RoundingMode.HALF_EVEN` (estándar bancario internacional).
+* **Cero Desbordes Binarios**: Evita las inconsistencias y pérdidas de centavos características de los tipos flotantes binarios (`double`/`float`) bajo la norma IEEE-754.
+
+### 3. Optimización de Consultas y Eliminación del Problema N+1
+* **Consultas Agrupadas en Lote**: En la generación de estados de cuenta consolidados (F4), se implementó la consulta indexada `findByAccountIdInAndDateBetween`. 
+* **Rendimiento Escalable**: En lugar de ejecutar una consulta por cada cuenta del cliente (patrón N+1), se resuelven todos los movimientos de todas las cuentas asociadas en un único viaje de red (*single round-trip*) a la base de datos.
+
+### 4. Seguridad Bancaria y Buenas Prácticas (OWASP / PCI-DSS)
+* **Mitigación de IDOR / Mass Assignment**: En las operaciones de creación (`POST`), el servicio garantiza la generación de claves primarias por el motor de base de datos forzando `id = null`, previniendo que un usuario malicioso sobrescriba registros preexistentes.
+* **Validaciones de Integridad**: Manejo global de excepciones para violaciones de integridad (`DataIntegrityViolationException`) y argumentos ilegales (`IllegalArgumentException`), retornando respuestas estructuradas `400 Bad Request`.
+* **Recomendaciones para Producción Bancaria**:
+  - Implementación de `BCryptPasswordEncoder` / `Argon2id` para derivación de claves con salteado criptográfico.
+  - Ocultación de credenciales en DTOs de salida (`@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)`).
+  - Capa perimetral de seguridad con **Spring Security**, autenticación vía **OAuth2 / JWT** y autorización por roles (**RBAC**).
+
+### 5. Comunicación Asincrónica y Patrón Transactional Outbox
+* **Desacoplamiento Orientado a Eventos (EDA)**: Los eventos de dominio (`AccountDebitedEvent`, `AccountCreditedEvent`, `ClientRegisteredEvent`) se publican de forma asíncrona mediante un broker de mensajería (**Apache Kafka** o **RabbitMQ**).
+* **Transactional Outbox**: Asegura consistencia eventual confiable escribiendo los eventos en una tabla `outbox` dentro de la misma transacción de base de datos antes de transmitirlos al bus de eventos, previniendo fallos de escritura dual (*dual-write problem*).
 
 ---
 

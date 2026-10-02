@@ -385,6 +385,66 @@
 					}
 				},
 				{
+					"name": "Actualizar Transaccion (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Deposito Ajustado\",\n    \"accountId\": 1\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/transactions/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions", "1"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar Parcial Transaccion (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Transferencia Recibida\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/transactions/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions", "1"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar Transaccion (DELETE)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8000/api/transactions/1",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "8000",
+							"path": ["api", "transactions", "1"]
+						}
+					}
+				},
+				{
 					"name": "Generar Reporte Estado de Cuenta",
 					"request": {
 						"method": "GET",
