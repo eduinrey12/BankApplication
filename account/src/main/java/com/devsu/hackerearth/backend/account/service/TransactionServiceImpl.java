@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -117,6 +117,9 @@ public class TransactionServiceImpl implements TransactionService {
 		calEnd.set(Calendar.MILLISECOND, 999);
 		Date end = calEnd.getTime();
 
+		// Optimizacion Senior: llamada asincrona no bloqueante al microservicio de clientes en paralelo con las consultas a BD
+		CompletableFuture<String> clientNameFuture = clientServiceClient.getClientNameAsync(clientId);
+
 		List<Account> accounts = accountRepository.findByClientId(clientId);
 		if (accounts == null || accounts.isEmpty()) {
 			return new ArrayList<>();
@@ -129,7 +132,7 @@ public class TransactionServiceImpl implements TransactionService {
 		Map<Long, List<Transaction>> txsByAccount = transactions.stream()
 				.collect(Collectors.groupingBy(Transaction::getAccountId));
 
-		String clientName = clientServiceClient.getClientName(clientId);
+		String clientName = clientNameFuture.join();
 		List<BankStatementDto> report = new ArrayList<>();
 
 		for (Account account : accounts) {
