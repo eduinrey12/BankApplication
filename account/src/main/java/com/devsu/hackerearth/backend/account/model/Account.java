@@ -31,4 +31,44 @@ public class Account extends Base {
 
 	@Column(name = "client_id")
 	private Long clientId;
+
+	public String getNumber() {
+		return number;
+	}
+
+	public void setNumber(String number) {
+		this.number = number;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public double getInitialAmount() {
+		return initialAmount;
+	}
+
+	public void setInitialAmount(double initialAmount) {
+		this.initialAmount = initialAmount;
+	}
+
+	public boolean isActive() {
+		return isActive;
+	}
+
+	public void setActive(boolean active) {
+		isActive = active;
+	}
+
+	public Long getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(Long clientId) {
+		this.clientId = clientId;
+	}
 }

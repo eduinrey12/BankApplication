@@ -22,4 +22,20 @@ public class Client extends Person {
 
 	@Column(name = "is_active")
 	private boolean isActive;
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public boolean isActive() {
+		return isActive;
+	}
+
+	public void setActive(boolean active) {
+		isActive = active;
+	}
 }
