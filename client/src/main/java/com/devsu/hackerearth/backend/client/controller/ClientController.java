@@ -53,16 +53,12 @@ public class ClientController {
 			return ResponseEntity.notFound().build();
 		}
 		ClientDto updated = clientService.update(clientDto);
-		if (updated == null) {
+		if (updated == null && clientDto.getId() == null) {
 			clientDto.setId(id);
 			updated = clientService.update(clientDto);
 		}
 		if (updated == null) {
-			ClientDto existing = clientService.getById(id);
-			if (existing == null) {
-				return ResponseEntity.notFound().build();
-			}
-			return ResponseEntity.ok(existing);
+			return ResponseEntity.notFound().build();
 		}
 		return ResponseEntity.ok(updated);
 	}

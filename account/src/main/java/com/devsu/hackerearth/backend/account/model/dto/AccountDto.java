@@ -14,6 +14,7 @@ public class AccountDto {
 	private String number;
 	private String type;
 	private double initialAmount;
+	@com.fasterxml.jackson.annotation.JsonProperty("isActive")
 	private boolean isActive;
 	@javax.validation.constraints.NotNull(message = "El clientId es obligatorio")
 	private Long clientId;

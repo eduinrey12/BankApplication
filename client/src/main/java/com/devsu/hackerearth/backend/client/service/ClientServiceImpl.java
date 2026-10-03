@@ -45,8 +45,13 @@ public class ClientServiceImpl implements ClientService {
 
 	@Override
 	public ClientDto update(ClientDto clientDto) {
-		Client existingClient = clientRepository.findById(clientDto.getId())
-				.orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + clientDto.getId()));
+		if (clientDto == null || clientDto.getId() == null) {
+			return null;
+		}
+		Client existingClient = clientRepository.findById(clientDto.getId()).orElse(null);
+		if (existingClient == null) {
+			return null;
+		}
 
 		existingClient.setDni(clientDto.getDni());
 		existingClient.setName(clientDto.getName());

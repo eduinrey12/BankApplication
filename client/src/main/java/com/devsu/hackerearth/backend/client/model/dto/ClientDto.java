@@ -14,12 +14,12 @@ public class ClientDto {
 	private String dni;
 	@javax.validation.constraints.NotBlank(message = "El nombre es obligatorio")
 	private String name;
-	@com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
 	private String password;
 	private String gender;
 	private int age;
 	private String address;
 	private String phone;
+	@com.fasterxml.jackson.annotation.JsonProperty("isActive")
 	private boolean isActive;
 
 	public Long getId() {

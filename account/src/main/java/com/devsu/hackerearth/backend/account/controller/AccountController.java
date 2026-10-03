@@ -53,16 +53,12 @@ public class AccountController {
 			return ResponseEntity.notFound().build();
 		}
 		AccountDto updated = accountService.update(accountDto);
-		if (updated == null) {
+		if (updated == null && accountDto.getId() == null) {
 			accountDto.setId(id);
 			updated = accountService.update(accountDto);
 		}
 		if (updated == null) {
-			AccountDto existing = accountService.getById(id);
-			if (existing == null) {
-				return ResponseEntity.notFound().build();
-			}
-			return ResponseEntity.ok(existing);
+			return ResponseEntity.notFound().build();
 		}
 		return ResponseEntity.ok(updated);
 	}

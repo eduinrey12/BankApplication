@@ -45,8 +45,13 @@ public class AccountServiceImpl implements AccountService {
 
 	@Override
 	public AccountDto update(AccountDto accountDto) {
-		Account existingAccount = accountRepository.findById(accountDto.getId())
-				.orElseThrow(() -> new ResourceNotFoundException("Cuenta no encontrada con id: " + accountDto.getId()));
+		if (accountDto == null || accountDto.getId() == null) {
+			return null;
+		}
+		Account existingAccount = accountRepository.findById(accountDto.getId()).orElse(null);
+		if (existingAccount == null) {
+			return null;
+		}
 
 		existingAccount.setNumber(accountDto.getNumber());
 		existingAccount.setType(accountDto.getType());

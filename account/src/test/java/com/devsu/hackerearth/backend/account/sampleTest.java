@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import com.devsu.hackerearth.backend.account.controller.AccountController;
 import com.devsu.hackerearth.backend.account.exception.InsufficientFundsException;
 import com.devsu.hackerearth.backend.account.model.Account;
 import com.devsu.hackerearth.backend.account.model.dto.AccountDto;
+import com.devsu.hackerearth.backend.account.model.dto.BankStatementDto;
 import com.devsu.hackerearth.backend.account.model.dto.TransactionDto;
 import com.devsu.hackerearth.backend.account.repository.AccountRepository;
 import com.devsu.hackerearth.backend.account.repository.TransactionRepository;
@@ -186,5 +188,19 @@ public class sampleTest {
 		when(txMock.getById(999L)).thenReturn(null);
 		ResponseEntity<TransactionDto> response = txController.get(999L);
 		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void getReportTest() {
+		TransactionService txMock = mock(TransactionService.class);
+		com.devsu.hackerearth.backend.account.controller.TransactionController txController = new com.devsu.hackerearth.backend.account.controller.TransactionController(txMock);
+		Date now = new Date();
+		BankStatementDto s1 = new BankStatementDto(now, "client", "accountNumber", "accountType", 10.0, true, "transactionType", 10.0, 15.0);
+		BankStatementDto s2 = new BankStatementDto(now, "client", "accountNumber", "accountType", 10.0, true, "transactionType", 5.0, 20.0);
+		List<BankStatementDto> list = java.util.Arrays.asList(s1, s2);
+		when(txMock.getAllByAccountClientIdAndDateBetween(1L, now, now)).thenReturn(list);
+		ResponseEntity<List<BankStatementDto>> response = txController.report(1L, now, now);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(list, response.getBody());
 	}
 }

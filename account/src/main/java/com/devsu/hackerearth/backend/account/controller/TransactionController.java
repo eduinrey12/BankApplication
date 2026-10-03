@@ -56,16 +56,12 @@ public class TransactionController {
 			return ResponseEntity.notFound().build();
 		}
 		TransactionDto updated = transactionService.update(transactionDto);
-		if (updated == null) {
+		if (updated == null && transactionDto.getId() == null) {
 			transactionDto.setId(id);
 			updated = transactionService.update(transactionDto);
 		}
 		if (updated == null) {
-			TransactionDto existing = transactionService.getById(id);
-			if (existing == null) {
-				return ResponseEntity.notFound().build();
-			}
-			return ResponseEntity.ok(existing);
+			return ResponseEntity.notFound().build();
 		}
 		return ResponseEntity.ok(updated);
 	}
