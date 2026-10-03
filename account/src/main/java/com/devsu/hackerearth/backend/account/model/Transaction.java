@@ -4,6 +4,7 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -18,7 +19,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", indexes = {
+	@Index(name = "idx_tx_acc_date", columnList = "account_id, date"),
+	@Index(name = "idx_tx_acc_id", columnList = "account_id")
+})
 public class Transaction extends Base {
 
 	@Temporal(TemporalType.TIMESTAMP)

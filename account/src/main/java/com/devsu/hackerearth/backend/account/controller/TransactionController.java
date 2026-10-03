@@ -42,12 +42,12 @@ public class TransactionController {
 	}
 
 	@PostMapping
-	public ResponseEntity<TransactionDto> create(@RequestBody TransactionDto transactionDto){
+	public ResponseEntity<TransactionDto> create(@javax.validation.Valid @RequestBody TransactionDto transactionDto){
 		return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.create(transactionDto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<TransactionDto> update(@PathVariable Long id, @RequestBody TransactionDto transactionDto){
+	public ResponseEntity<TransactionDto> update(@PathVariable Long id, @javax.validation.Valid @RequestBody TransactionDto transactionDto){
 		transactionDto.setId(id);
 		return ResponseEntity.ok(transactionService.update(transactionDto));
 	}

@@ -10,7 +10,9 @@ import lombok.NoArgsConstructor;
 public class ClientDto {
 
 	private Long id;
+	@javax.validation.constraints.NotBlank(message = "El DNI es obligatorio")
 	private String dni;
+	@javax.validation.constraints.NotBlank(message = "El nombre es obligatorio")
 	private String name;
 	@com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
 	private String password;

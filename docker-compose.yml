@@ -13,6 +13,7 @@ services:
       - SERVER_PORT=8001
     networks:
       - bank-network
+    restart: unless-stopped
 
   account-service:
     build:
@@ -29,6 +30,7 @@ services:
       - client-service
     networks:
       - bank-network
+    restart: unless-stopped
 
 networks:
   bank-network:

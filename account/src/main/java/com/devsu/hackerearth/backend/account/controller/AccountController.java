@@ -39,12 +39,12 @@ public class AccountController {
 	}
 
 	@PostMapping
-	public ResponseEntity<AccountDto> create(@RequestBody AccountDto accountDto){
+	public ResponseEntity<AccountDto> create(@javax.validation.Valid @RequestBody AccountDto accountDto){
 		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(accountDto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<AccountDto> update(@PathVariable Long id, @RequestBody AccountDto accountDto){
+	public ResponseEntity<AccountDto> update(@PathVariable Long id, @javax.validation.Valid @RequestBody AccountDto accountDto){
 		accountDto.setId(id);
 		return ResponseEntity.ok(accountService.update(accountDto));
 	}

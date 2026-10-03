@@ -10,10 +10,12 @@ import lombok.NoArgsConstructor;
 public class AccountDto {
 
 	private Long id;
+	@javax.validation.constraints.NotBlank(message = "El numero de cuenta es obligatorio")
 	private String number;
 	private String type;
 	private double initialAmount;
 	private boolean isActive;
+	@javax.validation.constraints.NotNull(message = "El clientId es obligatorio")
 	private Long clientId;
 
 	public Long getId() {

@@ -39,12 +39,12 @@ public class ClientController {
 	}
 
 	@PostMapping
-	public ResponseEntity<ClientDto> create(@RequestBody ClientDto clientDto){
+	public ResponseEntity<ClientDto> create(@javax.validation.Valid @RequestBody ClientDto clientDto){
 		return ResponseEntity.status(HttpStatus.CREATED).body(clientService.create(clientDto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<ClientDto> update(@PathVariable Long id, @RequestBody ClientDto clientDto){
+	public ResponseEntity<ClientDto> update(@PathVariable Long id, @javax.validation.Valid @RequestBody ClientDto clientDto){
 		clientDto.setId(id);
 		return ResponseEntity.ok(clientService.update(clientDto));
 	}

@@ -2,6 +2,7 @@ package com.devsu.hackerearth.backend.client.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -14,7 +15,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "clients")
+@Table(name = "clients", indexes = {
+	@Index(name = "idx_client_dni", columnList = "dni")
+})
 public class Client extends Person {
 
 	@Column(name = "password")

@@ -2,6 +2,7 @@ package com.devsu.hackerearth.backend.account.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -14,7 +15,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "accounts")
+@Table(name = "accounts", indexes = {
+	@Index(name = "idx_acc_client_id", columnList = "client_id"),
+	@Index(name = "idx_acc_number", columnList = "number", unique = true)
+})
 public class Account extends Base {
 
 	@Column(name = "number", unique = true, nullable = false)

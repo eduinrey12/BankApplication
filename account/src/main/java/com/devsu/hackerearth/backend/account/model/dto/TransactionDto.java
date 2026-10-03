@@ -16,6 +16,7 @@ public class TransactionDto {
 	private String type;
 	private double amount;
 	private double balance;
+	@javax.validation.constraints.NotNull(message = "El accountId es obligatorio")
 	private Long accountId;
 
 	public Long getId() {
