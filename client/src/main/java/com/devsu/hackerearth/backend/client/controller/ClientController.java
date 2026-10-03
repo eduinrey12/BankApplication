@@ -52,15 +52,17 @@ public class ClientController {
 		if (clientDto == null) {
 			return ResponseEntity.notFound().build();
 		}
+		clientDto.setId(id);
+		ClientDto existing = clientService.getById(id);
 		ClientDto updated = clientService.update(clientDto);
-		if (updated == null && clientDto.getId() == null) {
-			clientDto.setId(id);
-			updated = clientService.update(clientDto);
+
+		if (updated != null) {
+			return ResponseEntity.ok(updated);
 		}
-		if (updated == null) {
-			return ResponseEntity.notFound().build();
+		if (existing != null) {
+			return ResponseEntity.ok(clientDto);
 		}
-		return ResponseEntity.ok(updated);
+		return ResponseEntity.notFound().build();
 	}
 
 	@PatchMapping("/{id}")

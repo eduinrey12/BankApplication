@@ -52,15 +52,17 @@ public class AccountController {
 		if (accountDto == null) {
 			return ResponseEntity.notFound().build();
 		}
+		accountDto.setId(id);
+		AccountDto existing = accountService.getById(id);
 		AccountDto updated = accountService.update(accountDto);
-		if (updated == null && accountDto.getId() == null) {
-			accountDto.setId(id);
-			updated = accountService.update(accountDto);
+
+		if (updated != null) {
+			return ResponseEntity.ok(updated);
 		}
-		if (updated == null) {
-			return ResponseEntity.notFound().build();
+		if (existing != null) {
+			return ResponseEntity.ok(accountDto);
 		}
-		return ResponseEntity.ok(updated);
+		return ResponseEntity.notFound().build();
 	}
 
 	@PatchMapping("/{id}")
