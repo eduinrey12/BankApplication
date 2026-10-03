@@ -80,4 +80,52 @@ public class sampleTest {
 			assertTrue(fetched.isActive());
 		}
 	}
+
+	@Test
+	void getClientNotFoundTest() {
+		when(clientService.getById(999L)).thenReturn(null);
+		ResponseEntity<ClientDto> response = clientController.get(999L);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void deleteClientTest() {
+		ClientDto client = new ClientDto(1L, "Dni", "Name", "Password", "Gender", 1, "Address", "9999999999", true);
+		when(clientService.getById(1L)).thenReturn(client);
+		ResponseEntity<Void> response = clientController.delete(1L);
+		assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+	}
+
+	@Test
+	void deleteClientNotFoundTest() {
+		when(clientService.getById(999L)).thenReturn(null);
+		ResponseEntity<Void> response = clientController.delete(999L);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void updateClientTest() {
+		ClientDto client = new ClientDto(1L, "Dni", "Name", "Password", "Gender", 1, "Address", "9999999999", true);
+		when(clientService.update(client)).thenReturn(client);
+		ResponseEntity<ClientDto> response = clientController.update(1L, client);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(client, response.getBody());
+	}
+
+	@Test
+	void updateClientNotFoundTest() {
+		ClientDto client = new ClientDto(999L, "Dni", "Name", "Password", "Gender", 1, "Address", "9999999999", true);
+		when(clientService.update(client)).thenReturn(null);
+		when(clientService.getById(999L)).thenReturn(null);
+		ResponseEntity<ClientDto> response = clientController.update(999L, client);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void partialUpdateClientNotFoundTest() {
+		com.devsu.hackerearth.backend.client.model.dto.PartialClientDto partialDto = new com.devsu.hackerearth.backend.client.model.dto.PartialClientDto(false);
+		when(clientService.partialUpdate(999L, partialDto)).thenReturn(null);
+		ResponseEntity<ClientDto> response = clientController.partialUpdate(999L, partialDto);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
 }

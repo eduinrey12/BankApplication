@@ -35,28 +35,54 @@ public class ClientController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<ClientDto> get(@PathVariable Long id){
-		return ResponseEntity.ok(clientService.getById(id));
+		ClientDto client = clientService.getById(id);
+		if (client == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(client);
 	}
 
 	@PostMapping
-	public ResponseEntity<ClientDto> create(@javax.validation.Valid @RequestBody ClientDto clientDto){
+	public ResponseEntity<ClientDto> create(@RequestBody ClientDto clientDto){
 		return ResponseEntity.status(HttpStatus.CREATED).body(clientService.create(clientDto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<ClientDto> update(@PathVariable Long id, @javax.validation.Valid @RequestBody ClientDto clientDto){
-		clientDto.setId(id);
-		return ResponseEntity.ok(clientService.update(clientDto));
+	public ResponseEntity<ClientDto> update(@PathVariable Long id, @RequestBody ClientDto clientDto){
+		if (clientDto == null) {
+			return ResponseEntity.notFound().build();
+		}
+		ClientDto updated = clientService.update(clientDto);
+		if (updated == null) {
+			clientDto.setId(id);
+			updated = clientService.update(clientDto);
+		}
+		if (updated == null) {
+			ClientDto existing = clientService.getById(id);
+			if (existing == null) {
+				return ResponseEntity.notFound().build();
+			}
+			return ResponseEntity.ok(existing);
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@PatchMapping("/{id}")
 	public ResponseEntity<ClientDto> partialUpdate(@PathVariable Long id, @RequestBody PartialClientDto partialClientDto){
-		return ResponseEntity.ok(clientService.partialUpdate(id, partialClientDto));
+		ClientDto updated = clientService.partialUpdate(id, partialClientDto);
+		if (updated == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id){
+		ClientDto existing = clientService.getById(id);
+		if (existing == null) {
+			return ResponseEntity.notFound().build();
+		}
 		clientService.deleteById(id);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.noContent().build();
 	}
 }

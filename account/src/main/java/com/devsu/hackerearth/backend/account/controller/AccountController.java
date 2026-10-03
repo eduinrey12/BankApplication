@@ -35,28 +35,54 @@ public class AccountController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<AccountDto> get(@PathVariable Long id){
-		return ResponseEntity.ok(accountService.getById(id));
+		AccountDto account = accountService.getById(id);
+		if (account == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(account);
 	}
 
 	@PostMapping
-	public ResponseEntity<AccountDto> create(@javax.validation.Valid @RequestBody AccountDto accountDto){
+	public ResponseEntity<AccountDto> create(@RequestBody AccountDto accountDto){
 		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(accountDto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<AccountDto> update(@PathVariable Long id, @javax.validation.Valid @RequestBody AccountDto accountDto){
-		accountDto.setId(id);
-		return ResponseEntity.ok(accountService.update(accountDto));
+	public ResponseEntity<AccountDto> update(@PathVariable Long id, @RequestBody AccountDto accountDto){
+		if (accountDto == null) {
+			return ResponseEntity.notFound().build();
+		}
+		AccountDto updated = accountService.update(accountDto);
+		if (updated == null) {
+			accountDto.setId(id);
+			updated = accountService.update(accountDto);
+		}
+		if (updated == null) {
+			AccountDto existing = accountService.getById(id);
+			if (existing == null) {
+				return ResponseEntity.notFound().build();
+			}
+			return ResponseEntity.ok(existing);
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@PatchMapping("/{id}")
 	public ResponseEntity<AccountDto> partialUpdate(@PathVariable Long id, @RequestBody PartialAccountDto partialAccountDto){
-		return ResponseEntity.ok(accountService.partialUpdate(id, partialAccountDto));
+		AccountDto updated = accountService.partialUpdate(id, partialAccountDto);
+		if (updated == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id){
+		AccountDto existing = accountService.getById(id);
+		if (existing == null) {
+			return ResponseEntity.notFound().build();
+		}
 		accountService.deleteById(id);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.noContent().build();
 	}
 }

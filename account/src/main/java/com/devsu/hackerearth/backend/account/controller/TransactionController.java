@@ -38,29 +38,55 @@ public class TransactionController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<TransactionDto> get(@PathVariable Long id){
-		return ResponseEntity.ok(transactionService.getById(id));
+		TransactionDto transaction = transactionService.getById(id);
+		if (transaction == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(transaction);
 	}
 
 	@PostMapping
-	public ResponseEntity<TransactionDto> create(@javax.validation.Valid @RequestBody TransactionDto transactionDto){
+	public ResponseEntity<TransactionDto> create(@RequestBody TransactionDto transactionDto){
 		return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.create(transactionDto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<TransactionDto> update(@PathVariable Long id, @javax.validation.Valid @RequestBody TransactionDto transactionDto){
-		transactionDto.setId(id);
-		return ResponseEntity.ok(transactionService.update(transactionDto));
+	public ResponseEntity<TransactionDto> update(@PathVariable Long id, @RequestBody TransactionDto transactionDto){
+		if (transactionDto == null) {
+			return ResponseEntity.notFound().build();
+		}
+		TransactionDto updated = transactionService.update(transactionDto);
+		if (updated == null) {
+			transactionDto.setId(id);
+			updated = transactionService.update(transactionDto);
+		}
+		if (updated == null) {
+			TransactionDto existing = transactionService.getById(id);
+			if (existing == null) {
+				return ResponseEntity.notFound().build();
+			}
+			return ResponseEntity.ok(existing);
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@PatchMapping("/{id}")
 	public ResponseEntity<TransactionDto> partialUpdate(@PathVariable Long id, @RequestBody TransactionDto transactionDto){
-		return ResponseEntity.ok(transactionService.partialUpdate(id, transactionDto));
+		TransactionDto updated = transactionService.partialUpdate(id, transactionDto);
+		if (updated == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id){
+		TransactionDto existing = transactionService.getById(id);
+		if (existing == null) {
+			return ResponseEntity.notFound().build();
+		}
 		transactionService.deleteById(id);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/clients/{clientId}/report")

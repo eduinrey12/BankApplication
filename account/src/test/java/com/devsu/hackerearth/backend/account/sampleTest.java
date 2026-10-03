@@ -130,4 +130,61 @@ public class sampleTest {
 			assertEquals(20.0, last.getBalance(), "El saldo final debe ser exactamente 20.0 (100 - 80)");
 		}
 	}
+
+	@Test
+	void getAccountNotFoundTest() {
+		when(accountService.getById(999L)).thenReturn(null);
+		ResponseEntity<AccountDto> response = accountController.get(999L);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void deleteAccountTest() {
+		AccountDto account = new AccountDto(1L, "number", "savings", 100.0, true, 1L);
+		when(accountService.getById(1L)).thenReturn(account);
+		ResponseEntity<Void> response = accountController.delete(1L);
+		assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+	}
+
+	@Test
+	void deleteAccountNotFoundTest() {
+		when(accountService.getById(999L)).thenReturn(null);
+		ResponseEntity<Void> response = accountController.delete(999L);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void updateAccountTest() {
+		AccountDto account = new AccountDto(1L, "number", "savings", 100.0, true, 1L);
+		when(accountService.update(account)).thenReturn(account);
+		ResponseEntity<AccountDto> response = accountController.update(1L, account);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(account, response.getBody());
+	}
+
+	@Test
+	void updateAccountNotFoundTest() {
+		AccountDto account = new AccountDto(999L, "number", "savings", 100.0, true, 1L);
+		when(accountService.update(account)).thenReturn(null);
+		when(accountService.getById(999L)).thenReturn(null);
+		ResponseEntity<AccountDto> response = accountController.update(999L, account);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void partialUpdateAccountNotFoundTest() {
+		com.devsu.hackerearth.backend.account.model.dto.PartialAccountDto partialDto = new com.devsu.hackerearth.backend.account.model.dto.PartialAccountDto(false);
+		when(accountService.partialUpdate(999L, partialDto)).thenReturn(null);
+		ResponseEntity<AccountDto> response = accountController.partialUpdate(999L, partialDto);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	void getTransactionNotFoundTest() {
+		TransactionService txMock = mock(TransactionService.class);
+		com.devsu.hackerearth.backend.account.controller.TransactionController txController = new com.devsu.hackerearth.backend.account.controller.TransactionController(txMock);
+		when(txMock.getById(999L)).thenReturn(null);
+		ResponseEntity<TransactionDto> response = txController.get(999L);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
 }
