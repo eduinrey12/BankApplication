@@ -203,4 +203,13 @@ public class sampleTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(list, response.getBody());
 	}
+
+	@Test
+	void bankStatementDtoEqualityTest() {
+		Date d1 = new Date(1791054159100L);
+		Date d2 = new Date(1791054159150L);
+		BankStatementDto s1 = new BankStatementDto(d1, "client", "accountNumber", "accountType", 10.0, true, "transactionType", 10.0, 15.0);
+		BankStatementDto s2 = new BankStatementDto(d2, "client", "accountNumber", "accountType", 10.0, true, "transactionType", 10.0, 15.0);
+		assertEquals(s1, s2);
+	}
 }

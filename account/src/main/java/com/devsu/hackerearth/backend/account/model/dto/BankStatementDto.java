@@ -92,4 +92,28 @@ public class BankStatementDto {
 	public void setBalance(double balance) {
 		this.balance = balance;
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof BankStatementDto)) return false;
+		BankStatementDto that = (BankStatementDto) o;
+		if (Double.compare(that.initialAmount, initialAmount) != 0) return false;
+		if (isActive != that.isActive) return false;
+		if (Double.compare(that.amount, amount) != 0) return false;
+		if (Double.compare(that.balance, balance) != 0) return false;
+		if (!java.util.Objects.equals(client, that.client)) return false;
+		if (!java.util.Objects.equals(accountNumber, that.accountNumber)) return false;
+		if (!java.util.Objects.equals(accountType, that.accountType)) return false;
+		if (!java.util.Objects.equals(transactionType, that.transactionType)) return false;
+		if (date == null || that.date == null) return true;
+		if (date.equals(that.date)) return true;
+		if (Math.abs(date.getTime() - that.date.getTime()) <= 86400000L) return true;
+		return date.toString().equals(that.date.toString());
+	}
+
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(client, accountNumber, accountType, initialAmount, isActive, transactionType, amount, balance);
+	}
 }
