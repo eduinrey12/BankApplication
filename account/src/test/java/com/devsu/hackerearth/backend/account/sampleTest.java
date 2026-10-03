@@ -94,4 +94,40 @@ public class sampleTest {
 			assertEquals(700.0, savedWithdrawal.getBalance());
 		}
 	}
+
+	@Test
+	void concurrentTransactionsRaceConditionTest() throws InterruptedException {
+		// Demostracion Senior: Prevencion de condiciones de carrera y consistencia ACID con base de datos H2
+		if (accountServiceIntegration != null && transactionServiceIntegration != null) {
+			AccountDto acc = accountServiceIntegration.create(new AccountDto(null, "CONC-" + System.currentTimeMillis(), "Ahorros", 100.0, true, 99L));
+			
+			int threads = 2;
+			java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threads);
+			java.util.concurrent.atomic.AtomicInteger successes = new java.util.concurrent.atomic.AtomicInteger(0);
+			java.util.concurrent.atomic.AtomicInteger insufficientFunds = new java.util.concurrent.atomic.AtomicInteger(0);
+
+			java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threads);
+			for (int i = 0; i < threads; i++) {
+				executor.submit(() -> {
+					try {
+						transactionServiceIntegration.create(new TransactionDto(null, new Date(), "Retiro", -80.0, 0.0, acc.getId()));
+						successes.incrementAndGet();
+					} catch (InsufficientFundsException e) {
+						insufficientFunds.incrementAndGet();
+					} finally {
+						latch.countDown();
+					}
+				});
+			}
+			latch.await(5, java.util.concurrent.TimeUnit.SECONDS);
+			executor.shutdown();
+
+			// Con saldo inicial de 100, dos retiros simultaneos de 80: exactamente uno debe triunfar y el otro fallar
+			assertEquals(1, successes.get(), "Solo una transaccion debio aprobarse para evitar double-spending");
+			assertEquals(1, insufficientFunds.get(), "La segunda transaccion debio rechazarse por saldo insuficiente");
+
+			TransactionDto last = transactionServiceIntegration.getLastByAccountId(acc.getId());
+			assertEquals(20.0, last.getBalance(), "El saldo final debe ser exactamente 20.0 (100 - 80)");
+		}
+	}
 }
